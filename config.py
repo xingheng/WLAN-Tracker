@@ -4,6 +4,7 @@ import json
 from collections import namedtuple
 
 HOSTS = None
+SETTINGS = None
 
 def load_config():
     '''
@@ -13,6 +14,6 @@ def load_config():
     with open("./data/hosts.json") as f:
         root = json.loads(f.read(), object_hook=lambda d: namedtuple('HostEntity', d.keys())(*d.values()))
 
-        global HOSTS
+        global HOSTS, SETTINGS
         HOSTS = root.hosts
-
+        SETTINGS = root.settings

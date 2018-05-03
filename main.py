@@ -13,22 +13,36 @@ from ping import *
 
 def main():
     print "Analyzing..."
+    hosts = nmap(config.SETTINGS.host_addresses)
+
+    if len(hosts) <= 0:
+        print "Didn't scan out any IP addresses!"
+        return
+
     db = DB()
 
-    for entity in config.HOSTS:
-        alias, hostname = entity.name, entity.hostname
-        result, output, error = ping(hostname)
-        if result:
-            res, ip, mac = arp(hostname)
-            last_time = db.get_latest_record(mac)
+    for host in hosts:
+        res, ip, mac = arp(host)
 
-            if last_time is None or time.time() - last_time > 60.0:
-                db.save_record(time.time(), mac, alias, hostname, ip)
-                print "Saved %s: %s => %s" % (alias, mac, ip)
-            else:
-                print alias + " is active just now, time: " + str(last_time)
+        if not res:
+            print "Fetch mac address failed for %s" % host
+            continue
+
+        entities = filter(lambda x : x.mac.upper() == mac.upper(), config.HOSTS)
+
+        if len(entities) <= 0:
+            print "Skip this address: %s" % host
+            continue
+
+        entity = entities[0]
+        alias = entity.name
+        last_time = db.get_latest_record(mac)
+
+        if last_time is None or time.time() - last_time > 60.0:
+            db.save_record(time.time(), mac, alias, ip)
+            print "Saved %s: %s => %s" % (alias, mac, ip)
         else:
-            print alias + " is down"
+            print alias + " is active just now, time: " + str(last_time)
 
     print "\nTotal device records:\n"
     rows = []
@@ -45,7 +59,7 @@ def main():
 
 if __name__ == "__main__":
     config.load_config()
-    schedule.every(10).seconds.do(main)
+    schedule.every(5).seconds.do(main)
 
     while True:
         schedule.run_pending()

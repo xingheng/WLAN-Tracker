@@ -17,7 +17,6 @@ def create_db():
                             `timestamp`	REAL NOT NULL,
                             `mac`	TEXT NOT NULL,
                             `alias`	TEXT,
-                            `hostname`	TEXT,
                             `ip`	TEXT,
                             PRIMARY KEY(timestamp, mac)
                         );''')
@@ -26,8 +25,6 @@ def create_db():
         return True
     except Exception as e:
         print(e)
-    finally:
-        conn.close()
 
     return False
 
@@ -45,9 +42,12 @@ def create_default_host_config():
     "hosts": [
         {
             "name": "Will's iPhone",
-            "hostname": "Wills-iPhone.local"
+            "mac": "XX:XX:XX:XX:XX:XX"
         }
-    ]
+    ],
+    "settings": {
+        "host_addresses": "192.168.1.1/24"
+    }
 }
         ''')
 
@@ -55,6 +55,9 @@ def create_default_host_config():
 
 
 if __name__ == "__main__":
+    if not os.path.exists("./data"):
+        os.mkdir("./data")
+
     if create_db():
         print "Created a database including tables successfully."
 

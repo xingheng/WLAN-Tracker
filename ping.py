@@ -2,6 +2,18 @@
 
 import subprocess
 import distutils.spawn
+import tempfile
+
+
+def substring(source, prefix, suffix):
+    start = source.index(prefix)
+    end = source.index(suffix)
+
+    if start >= 0 and end >= 0 and end > start:
+        return source[start + len(prefix): end]
+
+    return None
+
 
 def ping(hostname):
     try:
@@ -36,6 +48,49 @@ def get_ip_from_ping_result(output):
     return None
 
 
+def nmap(hostname):
+    try:
+        executable = distutils.spawn.find_executable('nmap')
+
+        if executable is None:
+            print('nmap is missing in the envionment paths!')
+            return None
+
+        temp_file = tempfile.NamedTemporaryFile('rw')
+
+        cmd = '%s -sn %s -oG %s' % (executable, hostname, temp_file.name)
+        p = subprocess.Popen(['/bin/sh', '-c', cmd],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ret_code = p.wait()
+
+        if ret_code != 0:
+            print p.stdout.read()
+            print p.stderr.read()
+            return None
+
+        temp_file.seek(0)
+        content = temp_file.read()
+
+        # # Nmap 7.40 scan initiated Thu May  3 22: 45: 59 2018 as: / usr/local/bin/nmap - sn - oG / var/folders/dz/4w2fbhf95c58vt8mxr4y8gpr0000gr/T/tmp3gV4h9 192.168.31.1/24
+        # Host: 192.168.31.1 (XiaoQiang)	Status: Up
+        # Host: 192.168.31.41 ()	Status: Up
+        # Host: 192.168.31.42 ()	Status: Up
+        # Host: 192.168.31.57 ()	Status: Up
+        # Host: 192.168.31.79 ()	Status: Up
+        # Host: 192.168.31.133 ()	Status: Up
+        # # Nmap done at Thu May  3 22:46:02 2018 -- 256 IP addresses (6 hosts up) scanned in 2.59 seconds
+
+        ips = filter(lambda x: x.endswith('Status: Up'), content.splitlines())
+        ips = map(lambda x: substring(x, "Host:", "(").strip(), ips)
+
+        temp_file.close()
+        return ips
+    except Exception, e:
+        print(e)
+
+    return None
+
+
 def arp(hostname):
     try:
         executable = distutils.spawn.find_executable('arp')
@@ -56,17 +111,8 @@ def arp(hostname):
             # 3) 10.128.2.77 (10.128.2.77) -- no entry
             # 4) ? (10.128.2.77) -- no entry
 
-            def substring(prefix, suffix):
-                start = output.index(prefix)
-                end = output.index(suffix)
-
-                if start >= 0 and end >= 0 and end > start:
-                    return output[start + len(prefix): end]
-
-                return None
-
-            ip = substring("(", ")")
-            mac = substring("at ", " on")
+            ip = substring(output, "(", ")")
+            mac = substring(output, "at ", " on")
 
             return True, ip, mac
     except Exception, e:

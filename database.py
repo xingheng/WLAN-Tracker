@@ -26,11 +26,11 @@ class DB:
     def __exit__(self, exc_type, exc_value, traceback):
         self.conn.close()
 
-    def save_record(self, timestamp, mac, alias, hostname, ip):
+    def save_record(self, timestamp, mac, alias, ip):
         c = self.conn.cursor()
 
-        c.execute('INSERT OR REPLACE INTO record (timestamp, mac, alias, hostname, ip) VALUES (?,?,?,?,?)',
-                  (timestamp, mac, alias, hostname, ip))
+        c.execute('INSERT OR REPLACE INTO record (timestamp, mac, alias, ip) VALUES (?,?,?,?)',
+                  (timestamp, mac.upper(), alias, ip))
 
         self.conn.commit()
 
@@ -42,7 +42,7 @@ class DB:
     def get_latest_record(self, mac):
         c=self.conn.cursor()
         c.execute(
-            "SELECT timestamp FROM record WHERE mac == '%s' ORDER BY timestamp DESC LIMIT 1;" % mac)
+            "SELECT timestamp FROM record WHERE mac == '%s' ORDER BY timestamp DESC LIMIT 1;" % mac.upper())
         result = c.fetchone()
         return result.timestamp if result else None
 
