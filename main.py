@@ -6,7 +6,6 @@ import time
 import datetime
 import schedule
 
-from sys import platform
 from tabulate import tabulate
 from database import *
 from network import *
@@ -22,7 +21,6 @@ def main():
 
     db = DB()
 
-    is_linux = platform.startswith('linux')
     local_ips = get_local_ip_addresses()
 
     for host in hosts:
@@ -30,7 +28,7 @@ def main():
             print "Skip the local device address: %s" % host
             continue
 
-        res, ip, mac = ip_neighbor(host) if is_linux else arp(host)
+        res, ip, mac = get_neighbor_address(host)
 
         if not res:
             print "Fetch mac address failed for %s" % host

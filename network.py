@@ -5,6 +5,7 @@ import re
 import subprocess
 import tempfile
 from distutils.spawn import find_executable
+from sys import platform
 
 
 def substring(source, prefix, suffix):
@@ -25,7 +26,7 @@ def ping(hostname):
         executable = find_executable('ping')
 
         if executable is None:
-            print('ping is missing in the envionment paths!')
+            print('command not found: ping!')
             return False, None, None
 
         cmd = executable + ' -c 1 -t 1 ' + hostname
@@ -58,7 +59,7 @@ def nmap(hostname):
         executable = find_executable('nmap')
 
         if executable is None:
-            print('nmap is missing in the envionment paths!')
+            print('command not found: nmap!')
             return None
 
         temp_file = tempfile.NamedTemporaryFile('rw')
@@ -101,7 +102,7 @@ def arp(hostname):
         executable = find_executable('arp')
 
         if executable is None:
-            print('arp is missing in the envionment paths!')
+            print('command not found: arp!')
             return False, None, None
 
         cmd = executable + " -n " + hostname
@@ -137,7 +138,7 @@ def ip_neighbor(hostname):
         executable = find_executable('ip')
 
         if executable is None:
-            print('ip is missing in the envionment paths!')
+            print('command not found: ip!')
             return False, None, None
 
         cmd = "%s neighbor show to %s" % (executable, hostname)
@@ -167,6 +168,11 @@ def ip_neighbor(hostname):
     return False, None, None
 
 
+def get_neighbor_address(hostname):
+    is_linux = platform.startswith('linux')
+    return ip_neighbor(hostname) if is_linux else arp(hostname)
+
+
 def get_local_mac_addresses():
     '''
     Inspired from
@@ -187,11 +193,7 @@ def get_local_mac_addresses():
     return addresses
 
 
-def get_local_ip_addresses():
-    '''
-    linux only
-    '''
-
+def _get_local_ip_addresses_linux():
     try:
         executable = find_executable('hostname')
 
@@ -210,5 +212,43 @@ def get_local_ip_addresses():
             print p.stderr.read()
     except Exception, e:
         print(e)
+
+    return None
+
+
+def _get_local_ip_addresses_macos():
+    '''
+    https://coderwall.com/p/pozgig/get-local-ip-address-on-os-x-from-terminal
+    '''
+    try:
+        executable = find_executable('ifconfig')
+
+        if executable is None:
+            print('command not found: ifconfig!')
+            return False, None, None
+
+        cmd = executable + \
+            " | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}'"
+        p = subprocess.Popen(['/bin/sh', '-c', cmd],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if p.wait() == 0:
+            output = p.stdout.read()
+            return output.split(' ')
+        else:
+            print p.stderr.read()
+    except Exception, e:
+        print(e)
+
+    return None
+
+
+def get_local_ip_addresses():
+    if platform.startswith('linux'):
+        return _get_local_ip_addresses_linux()
+    elif platform == 'darwin':
+        return _get_local_ip_addresses_macos()
+    else:
+        assert("not implement!")
 
     return None
