@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+import os
+import re
 import subprocess
-import distutils.spawn
 import tempfile
+from distutils.spawn import find_executable
 
 
 def substring(source, prefix, suffix):
@@ -16,8 +18,11 @@ def substring(source, prefix, suffix):
 
 
 def ping(hostname):
+    '''
+    unused
+    '''
     try:
-        executable = distutils.spawn.find_executable('ping')
+        executable = find_executable('ping')
 
         if executable is None:
             print('ping is missing in the envionment paths!')
@@ -50,7 +55,7 @@ def get_ip_from_ping_result(output):
 
 def nmap(hostname):
     try:
-        executable = distutils.spawn.find_executable('nmap')
+        executable = find_executable('nmap')
 
         if executable is None:
             print('nmap is missing in the envionment paths!')
@@ -93,14 +98,15 @@ def nmap(hostname):
 
 def arp(hostname):
     try:
-        executable = distutils.spawn.find_executable('arp')
+        executable = find_executable('arp')
 
         if executable is None:
             print('arp is missing in the envionment paths!')
             return False, None, None
 
         cmd = executable + " -n " + hostname
-        p = subprocess.Popen(['/bin/sh', '-c', cmd], stdout=subprocess.PIPE)
+        p = subprocess.Popen(['/bin/sh', '-c', cmd],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         if p.wait() == 0:
             output = p.stdout.read()
@@ -115,7 +121,94 @@ def arp(hostname):
             mac = substring(output, "at ", " on")
 
             return True, ip, mac
+        else:
+            print p.stderr.read()
     except Exception, e:
         print(e)
 
     return False, None, None
+
+
+def ip_neighbor(hostname):
+    '''
+    linux only
+    '''
+    try:
+        executable = find_executable('ip')
+
+        if executable is None:
+            print('ip is missing in the envionment paths!')
+            return False, None, None
+
+        cmd = "%s neighbor show to %s" % (executable, hostname)
+        p = subprocess.Popen(['/bin/sh', '-c', cmd],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if p.wait() == 0:
+            output = p.stdout.read()
+
+            if len(output) <= 0:
+                return False, None, None
+
+            # sample output:
+            # 192.168.3.105 dev eth0 lladdr 00:e0:4c:68:1a:f9 STALE
+
+            ip = re.search(
+                r'((2[0-5]|1[0-9]|[0-9])?[0-9]\.){3}((2[0-5]|1[0-9]|[0-9])?[0-9])', output, re.I).group()
+            mac = re.search(
+                r'([0-9A-F]{2}[:-]){5}([0-9A-F]{2})', output, re.I).group()
+
+            return True, ip, mac
+        else:
+            print p.stderr.read()
+    except Exception, e:
+        print(e)
+
+    return False, None, None
+
+
+def get_local_mac_addresses():
+    '''
+    Inspired from
+    https://www.raspberrypi-spy.co.uk/2012/06/finding-the-mac-address-of-a-raspberry-pi/
+    '''
+
+    addresses = []
+
+    try:
+        for root, dirs, files in os.walk('/sys/class/net'):
+            for dir in dirs:
+                path = '/'.join((root, dir, 'address'))
+                with open(path) as f:
+                    addresses.append(f.read().strip())
+    except Exception, e:
+        print e
+
+    return addresses
+
+
+def get_local_ip_addresses():
+    '''
+    linux only
+    '''
+
+    try:
+        executable = find_executable('hostname')
+
+        if executable is None:
+            print('command not found: hostname!')
+            return False, None, None
+
+        cmd = executable + " --all-ip-addresses"
+        p = subprocess.Popen(['/bin/sh', '-c', cmd],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if p.wait() == 0:
+            output = p.stdout.read()
+            return output.split(' ')
+        else:
+            print p.stderr.read()
+    except Exception, e:
+        print(e)
+
+    return None

@@ -6,29 +6,37 @@ import time
 import datetime
 import schedule
 
+from sys import platform
 from tabulate import tabulate
 from database import *
-from ping import *
+from network import *
 
 
 def main():
     print "Analyzing..."
     hosts = nmap(config.SETTINGS.host_addresses)
 
-    if len(hosts) <= 0:
+    if hosts is None or len(hosts) <= 0:
         print "Didn't scan out any IP addresses!"
         return
 
     db = DB()
 
+    is_linux = platform.startswith('linux')
+    local_ips = get_local_ip_addresses()
+
     for host in hosts:
-        res, ip, mac = arp(host)
+        if host in local_ips:
+            print "Skip the local device address: %s" % host
+            continue
+
+        res, ip, mac = ip_neighbor(host) if is_linux else arp(host)
 
         if not res:
             print "Fetch mac address failed for %s" % host
             continue
 
-        entities = filter(lambda x : x.mac.upper() == mac.upper(), config.HOSTS)
+        entities = filter(lambda x: x.mac.upper() == mac.upper(), config.HOSTS)
 
         if len(entities) <= 0:
             print "Skip this address: %s" % host
@@ -49,7 +57,12 @@ def main():
 
     for record in db.get_all_devices():
         ts = db.get_latest_record(record.mac)
-        date = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+        if ts is None or ts <= 0:
+            continue
+
+        date = datetime.datetime.fromtimestamp(
+            ts).strftime('%Y-%m-%d %H:%M:%S')
         rows.append([record.alias, record.mac, date])
 
     print tabulate(rows, headers=['Name', 'MAC', 'Last Active Time'])
