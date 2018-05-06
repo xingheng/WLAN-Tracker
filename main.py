@@ -5,6 +5,7 @@ import config
 import time
 import datetime
 import schedule
+import voice
 
 from tabulate import tabulate
 from database import *
@@ -47,6 +48,7 @@ def main():
         if last_time is None or time.time() - last_time > 60.0:
             db.save_record(time.time(), mac, alias, ip)
             print "Saved %s: %s => %s" % (alias, mac, ip)
+            voice.synthesize_voice_play(u"%s已经上线啦！" % unicode(alias))
         else:
             print alias + " is active just now, time: " + str(last_time)
 
@@ -68,8 +70,29 @@ def main():
     print "\nDone!\n" + "-" * 60
 
 
+def startup():
+    now = datetime.datetime.now()
+    hour = now.hour
+    greeting = None
+
+    if hour <= 7:
+        greeting = "早上好，韩大大"
+    elif hour <= 12:
+        greeting = "上午好，韩大大"
+    elif hour <= 18:
+        greeting = "下午好，韩大大"
+    else:
+        greeting = "晚上好，韩大大"
+
+    voice.synthesize_voice_play(greeting)
+
+
 if __name__ == "__main__":
     config.load_config()
+
+    print "Init..."
+    startup()
+
     schedule.every(5).seconds.do(main)
 
     while True:

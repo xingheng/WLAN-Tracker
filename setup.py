@@ -47,6 +47,11 @@ def create_default_host_config():
     ],
     "settings": {
         "host_addresses": "192.168.1.1/24"
+    },
+    "keys": {
+        "baidu_tts_appid": "xxxx",
+        "baidu_tts_appkey": "xxxx",
+        "baidu_tts_secret": "xxxx"
     }
 }
         ''')

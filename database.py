@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 import sqlite3
 from collections import namedtuple
