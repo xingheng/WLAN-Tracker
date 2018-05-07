@@ -27,23 +27,23 @@ class DB:
     def __exit__(self, exc_type, exc_value, traceback):
         self.conn.close()
 
-    def save_record(self, timestamp, mac, alias, ip):
+    def save_record(self, timestamp, mac, alias, nickname, ip):
         c = self.conn.cursor()
 
-        c.execute('INSERT OR REPLACE INTO record (timestamp, mac, alias, ip) VALUES (?,?,?,?)',
-                  (timestamp, mac.upper(), alias, ip))
+        c.execute('INSERT OR REPLACE INTO device (timestamp, mac, alias, nickname, ip) VALUES (?,?,?,?,?)',
+                  (timestamp, mac.upper(), alias, nickname, ip))
 
         self.conn.commit()
 
     def get_all_devices(self):
         c=self.conn.cursor()
-        c.execute("SELECT DISTINCT(mac), alias FROM record;")
+        c.execute("SELECT DISTINCT(mac), alias FROM device;")
         return c.fetchall()
 
     def get_latest_record(self, mac):
         c=self.conn.cursor()
         c.execute(
-            "SELECT timestamp FROM record WHERE mac == '%s' ORDER BY timestamp DESC LIMIT 1;" % mac.upper())
+            "SELECT timestamp FROM device WHERE mac == '%s' ORDER BY timestamp DESC LIMIT 1;" % mac.upper())
         result = c.fetchone()
         return result.timestamp if result else None
 
