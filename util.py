@@ -1,6 +1,6 @@
 
 import datetime
-from voice import synthesize_voice_play
+from tts import synthesize_voice_play
 
 
 def speak(text, gentle = True):

@@ -31,9 +31,9 @@ def create_db():
     return False
 
 
-def create_default_host_config():
+def create_default_config():
     cur_dir = os.path.dirname(__file__)
-    path = os.path.join(cur_dir, "data/hosts.json")
+    path = os.path.join(cur_dir, "data/configure.json")
 
     if os.path.exists(path):
         print "host config file exists: %s" % path
@@ -72,5 +72,5 @@ if __name__ == "__main__":
     if create_db():
         print "Created a database including tables successfully."
 
-    if create_default_host_config():
+    if create_default_config():
         print "Created a host config file successfully."

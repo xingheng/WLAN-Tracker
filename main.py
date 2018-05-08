@@ -3,11 +3,14 @@
 
 import config
 import datetime
+import sys
 import time
-import util
 
 import schedule
+
+import util
 from device import device_monitor
+
 
 def startup():
     now = datetime.datetime.now()
@@ -34,6 +37,10 @@ if __name__ == "__main__":
 
     schedule.every(5).seconds.do(device_monitor)
 
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    try:
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+    except KeyboardInterrupt:
+        util.speak("Goodbye, master!")
+        sys.exit(0)

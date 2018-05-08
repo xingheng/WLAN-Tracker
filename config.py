@@ -13,7 +13,7 @@ def load_config():
     '''
 
     cur_dir = os.path.dirname(__file__)
-    with open(os.path.join(cur_dir, "data/hosts.json")) as f:
+    with open(os.path.join(cur_dir, "data/configure.json")) as f:
         root = json.loads(f.read(), object_hook=lambda d: namedtuple('HostEntity', d.keys())(*d.values()))
 
         global HOSTS, SETTINGS, KEYS
