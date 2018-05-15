@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
 
-import config
 import datetime
 import time
+import config
+import scanner
 
 from tabulate import tabulate
-
 from database import *
-from network import *
-from util import speak
+
+from ..builtin import speak
 
 
-def device_monitor():
+def monitor():
+    host_block = config.HOST_BLOCK
+    host_addresses = config.HOST_ADDRESSES
+
+    if not host_block or not host_addresses:
+        print "Lack of host block/addresses!"
+        return
+
     print "Analyzing..."
-    hosts = nmap(config.SETTINGS.host_addresses)
+    hosts = scanner.nmap(host_block)
 
-    if hosts is None or len(hosts) <= 0:
+    if not hosts or len(hosts) <= 0:
         print "Didn't scan out any IP addresses!"
         return
 
-    db = DB()
+    db = DB(config.DBPATH)
 
-    local_ips = get_local_ip_addresses()
+    local_ips = scanner.get_local_ip_addresses()
     skip_local_hosts = []
     skip_unstage_hosts = []
 
@@ -30,15 +37,16 @@ def device_monitor():
             skip_local_hosts.append(host)
             continue
 
-        res, ip, mac = get_neighbor_address(host)
+        res, ip, mac = scanner.get_neighbor_address(host)
 
         if not res:
             print "Fetch mac address failed for %s" % host
             continue
 
-        entities = filter(lambda x: x.mac.upper() == mac.upper(), config.HOSTS)
+        entities = filter(lambda x: x.mac.upper() ==
+                          mac.upper(), host_addresses)
 
-        if len(entities) <= 0:
+        if not entities and len(entities) <= 0:
             skip_unstage_hosts.append(host)
             continue
 
@@ -57,7 +65,8 @@ def device_monitor():
             print "%s is active just %ld second(s) ago." % (alias, delta)
 
     if len(skip_local_hosts) > 0:
-        print "Skip these local device address: %s" % ', '.join(skip_local_hosts)
+        print "Skip these local device address: %s" % ', '.join(
+            skip_local_hosts)
 
     if len(skip_unstage_hosts) > 0:
         print "Skip these unstaged device address: %s" % ', '.join(

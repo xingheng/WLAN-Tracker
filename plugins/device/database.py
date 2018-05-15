@@ -16,9 +16,10 @@ def namedtuple_factory(cursor, row):
 
 
 class DB:
-    def __init__(self):
+    def __init__(self, filepath):
         cur_dir = os.path.dirname(__file__)
-        self.conn = sqlite3.connect(os.path.join(cur_dir, 'data/main.sqlite'))
+        root_dir = os.path.dirname(cur_dir)
+        self.conn = sqlite3.connect(filepath)
         self.conn.row_factory = namedtuple_factory
 
     def __enter__(self):

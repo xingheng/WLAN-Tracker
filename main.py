@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import config
 import datetime
 import sys
 import time
-
 import schedule
 
-import util
-from device import device_monitor
+from app import Application
+from plugins.builtin import speak
 
 
 def startup():
@@ -26,21 +24,23 @@ def startup():
     else:
         greeting = "晚上好，韩大大"
 
-    util.speak(greeting)
+    speak(greeting)
 
 
 if __name__ == "__main__":
-    config.load_config()
-
     print "Init..."
     startup()
 
-    schedule.every(5).seconds.do(device_monitor)
+    device = Application('device')
+    network = Application('network')
+
+    schedule.every(5).seconds.do(lambda: device.run())
+    schedule.every(5).seconds.do(lambda: network.run())
 
     try:
         while True:
             schedule.run_pending()
             time.sleep(1)
     except KeyboardInterrupt:
-        util.speak("Goodbye, master!")
+        speak("Goodbye, master!")
         sys.exit(0)

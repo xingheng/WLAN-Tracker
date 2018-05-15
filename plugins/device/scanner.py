@@ -1,3 +1,6 @@
+'''
+    nmap, arp, ip/hostname, ifconfig
+'''
 
 import os
 import re
@@ -7,48 +10,12 @@ from distutils.spawn import find_executable
 from sys import platform
 
 
-def substring(source, prefix, suffix):
+def _substring(source, prefix, suffix):
     start = source.index(prefix)
     end = source.index(suffix)
 
     if start >= 0 and end >= 0 and end > start:
         return source[start + len(prefix): end]
-
-    return None
-
-
-def ping(hostname):
-    '''
-    unused
-    '''
-    try:
-        executable = find_executable('ping')
-
-        if executable is None:
-            print('command not found: ping!')
-            return False, None, None
-
-        cmd = executable + ' -c 1 -t 1 ' + hostname
-        p = subprocess.Popen(['/bin/sh', '-c', cmd],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        ret_code = p.wait()
-        str_output = p.stdout.read()
-        str_error = p.stderr.read()
-
-        return ret_code == 0, str_output, str_error
-    except Exception, e:
-        print(e)
-
-    return False, None, None
-
-
-def get_ip_from_ping_result(output):
-    text = output.splitlines()[0]
-    start = text.index("(")
-    end = text.index(")")
-
-    if start >= 0 and end >= 0 and end >= start:
-        return text[start + 1:end]
 
     return None
 
@@ -86,7 +53,7 @@ def nmap(hostname):
         # # Nmap done at Thu May  3 22:46:02 2018 -- 256 IP addresses (6 hosts up) scanned in 2.59 seconds
 
         ips = filter(lambda x: x.endswith('Status: Up'), content.splitlines())
-        ips = map(lambda x: substring(x, "Host:", "(").strip(), ips)
+        ips = map(lambda x: _substring(x, "Host:", "(").strip(), ips)
 
         temp_file.close()
         return ips
@@ -117,8 +84,8 @@ def arp(hostname):
             # 3) 10.128.2.77 (10.128.2.77) -- no entry
             # 4) ? (10.128.2.77) -- no entry
 
-            ip = substring(output, "(", ")")
-            mac = substring(output, "at ", " on")
+            ip = _substring(output, "(", ")")
+            mac = _substring(output, "at ", " on")
 
             return True, ip, mac
         else:
