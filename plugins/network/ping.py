@@ -1,20 +1,17 @@
-
-import os
-import re
 import subprocess
-import tempfile
 from distutils.spawn import find_executable
-from sys import platform
+
+from ..builtin import get_logger, F
+
+logger = get_logger(__file__, F('.'))
+
 
 def ping(hostname):
-    '''
-    unused
-    '''
     try:
         executable = find_executable('ping')
 
         if executable is None:
-            print('command not found: ping!')
+            logger.error('command not found: ping!')
             return False, None, None
 
         cmd = executable + ' -c 1 -t 1 ' + hostname
@@ -25,8 +22,8 @@ def ping(hostname):
         str_error = p.stderr.read()
 
         return ret_code == 0, str_output, str_error
-    except Exception, e:
-        print(e)
+    except Exception as e:
+        logger.error(e)
 
     return False, None, None
 

@@ -9,6 +9,10 @@ import tempfile
 from distutils.spawn import find_executable
 from sys import platform
 
+from ..builtin import get_logger, F
+
+logger = get_logger(__file__, F('.'))
+
 
 def _substring(source, prefix, suffix):
     start = source.index(prefix)
@@ -25,7 +29,7 @@ def nmap(hostname):
         executable = find_executable('nmap')
 
         if executable is None:
-            print('command not found: nmap!')
+            logger.error('command not found: nmap!')
             return None
 
         temp_file = tempfile.NamedTemporaryFile('rw')
@@ -36,8 +40,8 @@ def nmap(hostname):
         ret_code = p.wait()
 
         if ret_code != 0:
-            print p.stdout.read()
-            print p.stderr.read()
+            logger.error(p.stdout.read())
+            logger.error(p.stderr.read())
             return None
 
         temp_file.seek(0)
@@ -55,10 +59,13 @@ def nmap(hostname):
         ips = filter(lambda x: x.endswith('Status: Up'), content.splitlines())
         ips = map(lambda x: _substring(x, "Host:", "(").strip(), ips)
 
+        if len(ips) <= 0:
+            logger.info(content)
+
         temp_file.close()
         return ips
     except Exception, e:
-        print(e)
+        logger.error(e)
 
     return None
 
@@ -68,7 +75,7 @@ def arp(hostname):
         executable = find_executable('arp')
 
         if executable is None:
-            print('command not found: arp!')
+            logger.error('command not found: arp!')
             return False, None, None
 
         cmd = executable + " -n " + hostname
@@ -89,9 +96,9 @@ def arp(hostname):
 
             return True, ip, mac
         else:
-            print p.stderr.read()
+            logger.error(p.stderr.read())
     except Exception, e:
-        print(e)
+        logger.error(e)
 
     return False, None, None
 
@@ -104,7 +111,7 @@ def ip_neighbor(hostname):
         executable = find_executable('ip')
 
         if executable is None:
-            print('command not found: ip!')
+            logger.error('command not found: ip!')
             return False, None, None
 
         cmd = "%s neighbor show to %s" % (executable, hostname)
@@ -127,9 +134,9 @@ def ip_neighbor(hostname):
 
             return True, ip, mac
         else:
-            print p.stderr.read()
+            logger.error(p.stderr.read())
     except Exception, e:
-        print(e)
+        logger.error(e)
 
     return False, None, None
 
@@ -154,7 +161,7 @@ def get_local_mac_addresses():
                 with open(path) as f:
                     addresses.append(f.read().strip())
     except Exception, e:
-        print e
+        logger.error(e)
 
     return addresses
 
@@ -164,7 +171,7 @@ def _get_local_ip_addresses_linux():
         executable = find_executable('hostname')
 
         if executable is None:
-            print('command not found: hostname!')
+            logger.error('command not found: hostname!')
             return False, None, None
 
         cmd = executable + " --all-ip-addresses"
@@ -175,9 +182,9 @@ def _get_local_ip_addresses_linux():
             output = p.stdout.read()
             return output.split(' ')
         else:
-            print p.stderr.read()
+            logger.error(p.stderr.read())
     except Exception, e:
-        print(e)
+        logger.error(e)
 
     return None
 
@@ -190,7 +197,7 @@ def _get_local_ip_addresses_macos():
         executable = find_executable('ifconfig')
 
         if executable is None:
-            print('command not found: ifconfig!')
+            logger.error('command not found: ifconfig!')
             return False, None, None
 
         cmd = executable + \
@@ -202,9 +209,9 @@ def _get_local_ip_addresses_macos():
             output = p.stdout.read()
             return output.split(' ')
         else:
-            print p.stderr.read()
+            logger.error(p.stderr.read())
     except Exception, e:
-        print(e)
+        logger.error(e)
 
     return None
 

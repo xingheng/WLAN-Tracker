@@ -7,8 +7,12 @@ import os
 from tempfile import mkstemp
 from sys import platform
 from datetime import datetime
+from logger import get_logger
 from aip import AipSpeech
 from pygame import mixer
+from utils import *
+
+logger = get_logger(__file__, F('.'))
 
 TTS_APPID = None
 TTS_APPKEY = None
@@ -23,7 +27,10 @@ class Speech(object):
         self.language = language
 
     def play(self):
+        global TTS_APPID, TTS_APPKEY, TTS_SECRET
+
         if not (TTS_APPID and TTS_APPKEY and TTS_SECRET):
+            logger.error('Lack of app key configuration before speaking!')
             assert()
 
         client = AipSpeech(TTS_APPID, TTS_APPKEY, TTS_SECRET)
@@ -36,7 +43,7 @@ class Speech(object):
         })
 
         if isinstance(result, dict):
-            print result
+            logger.error(result)
             return False
 
         tmp_file = mkstemp('-tts-voice.mp3')
@@ -56,6 +63,7 @@ class Speech(object):
         while mixer.music.get_busy() == True:
             continue
 
+        logger.info('Speak: %s', self.text)
         return True
 
     def __del__(self):
@@ -67,22 +75,24 @@ def speak(text, gentle=True):
     '''
         speech wrapper.
     '''
-    if gentle:
+    if gentle and False:
         now = datetime.now()
 
         if now.hour < 6 or now.hour > 22:
-            print(text)
+            logger.info('Speak silent: %s', text)
             return
+
+    if not initialize():
+        logger.warning('Init failed!')
 
     Speech(text).play()
 
 
-def setup(app):
-    app.register_formatter(speak)
-    path = app.get_generic_file("baidu_tts.cfg")
+def initialize():
+    path = get_data_file("baidu_tts.cfg", __file__)
 
     if os.path.exists(path):
-        root = app.load_tuple_data(path)
+        root = load_tuple_data(path)
 
         global TTS_APPID, TTS_APPKEY, TTS_SECRET
         TTS_APPID = root.keys.appid
@@ -91,7 +101,7 @@ def setup(app):
 
         mixer.init()
         mixer.music.set_volume(1.0)
-        return
+        return True
 
     with open(path, 'w') as f:
         f.write('''
@@ -104,4 +114,9 @@ def setup(app):
 }
         '''.strip())
 
-    print 'Initialized a configuration file at %s' % path
+    logger.info('Initialized a configuration file at %s', path)
+    return False
+
+
+if __name__ == "__main__":
+    speak("Hello")

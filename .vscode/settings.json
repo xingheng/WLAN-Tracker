@@ -1,0 +1,8 @@
+{
+    "python.linting.pylintArgs": [
+        "--disable=R,C,W", // disable convention, refactor and warning
+        "--errors-only",
+        "--indent-string=\"    \"",
+        "--disable=E0401"
+    ],
+}

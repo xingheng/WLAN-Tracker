@@ -1,5 +1,4 @@
 pygame==1.9.3
 baidu_aip==2.2.2.0
-tabulate==0.8.2
 schedule==0.5.0
 aip==1.0.0.5
