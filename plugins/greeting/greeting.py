@@ -3,9 +3,6 @@
 import os
 import datetime
 
-# import sys
-# sys.path.insert(0, os.path.abspath("../plugins"))
-
 from ..builtin import get_logger, speak, F, get_data_file, load_tuple_data
 
 logger = get_logger(__file__, F('.'))
